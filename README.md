@@ -1,5 +1,7 @@
 # Delivery Tracking (MVP)
 
+Tracking of the staff; the customer sees their product's delivery live.
+
 Same-day delivery tracking for an inverter and battery shop.
 
 - **Customers** get a live tracking link with a map showing the road route, an ETA and a call button. No login.
