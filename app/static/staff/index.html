@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="referrer" content="strict-origin">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="icon" href="/static/staff/icon-192.png">
+  <link rel="apple-touch-icon" href="/static/staff/icon-192.png">
+  <title>My Deliveries</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+  <header class="bg-blue-700 text-white px-4 py-3 sticky top-0 z-20 shadow">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs opacity-80">Today's deliveries</div>
+        <div id="staffName" class="text-lg font-semibold">Loading...</div>
+      </div>
+      <div id="trackingPill" class="hidden text-xs font-semibold bg-green-500 rounded-full px-3 py-1">
+        Sharing location
+      </div>
+    </div>
+  </header>
+
+  <div id="banners" class="px-3 pt-3 space-y-2">
+    <div id="bannerGps" class="hidden rounded-lg bg-red-600 text-white p-3 text-sm font-medium">
+      Location permission is blocked. The customer cannot see you on the map.
+      Open your browser settings for this site, allow Location, then reload this page.
+    </div>
+    <div id="bannerPing" class="hidden rounded-lg bg-amber-500 text-white p-3 text-sm font-medium">
+      Location updates are not reaching the shop. Check mobile data. The app keeps retrying.
+    </div>
+    <div id="bannerOffline" class="hidden rounded-lg bg-slate-700 text-white p-3 text-sm font-medium">
+      You are offline. Buttons will work again when the connection is back.
+    </div>
+    <div id="bannerError" class="hidden rounded-lg bg-red-600 text-white p-3 text-sm font-medium"></div>
+  </div>
+
+  <main id="list" class="p-3 space-y-4 pb-24"></main>
+
+  <!-- Confirm delivered -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-30 bg-black/60 flex items-end sm:items-center justify-center">
+    <div class="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
+      <div>
+        <div class="text-lg font-semibold">Mark as delivered?</div>
+        <div id="confirmText" class="text-sm text-slate-600"></div>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" id="confirmCancel" class="flex-1 py-3 rounded-xl bg-slate-200 font-semibold">Not yet</button>
+        <button type="button" id="confirmOk" class="flex-1 py-3 rounded-xl bg-green-600 text-white font-semibold">Yes, delivered</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/staff/staff.js"></script>
+</body>
+</html>

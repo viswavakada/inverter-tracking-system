@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="icon" href="/static/staff/icon-192.png">
+  <title>Track your delivery</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <style>
+    #map { height: 52vh; min-height: 260px; }
+    .pin { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9999px;
+           font-size: 18px; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .pin-staff { background: #1d4ed8; }
+    .pin-home { background: #16a34a; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+  <div class="max-w-lg mx-auto min-h-screen bg-white shadow">
+    <header class="bg-blue-700 text-white px-4 py-3">
+      <div class="text-xs opacity-80">Delivery tracking</div>
+      <div id="item" class="font-semibold truncate">&nbsp;</div>
+    </header>
+
+    <div id="notFound" class="hidden p-8 text-center text-slate-600">
+      This tracking link is not valid. Please check the link the shop sent you.
+    </div>
+
+    <div id="content" class="hidden">
+      <div id="map" class="relative z-0"></div>
+
+      <section class="p-4 space-y-4">
+        <div>
+          <div id="statusText" class="text-2xl font-bold leading-tight">Loading...</div>
+          <div id="statusSub" class="text-sm text-slate-500 mt-1"></div>
+        </div>
+
+        <div id="staffBox" class="hidden flex items-center justify-between rounded-2xl bg-slate-50 p-4">
+          <div>
+            <div class="text-xs text-slate-500">Your delivery person</div>
+            <div id="staffName" class="text-lg font-semibold"></div>
+          </div>
+          <a id="callBtn" href="#" class="rounded-xl bg-green-600 text-white font-semibold px-5 py-3">Call</a>
+        </div>
+
+        <div id="address" class="text-sm text-slate-600"></div>
+        <ol id="timeline" class="text-sm text-slate-600 space-y-1"></ol>
+        <div id="stale" class="hidden text-xs text-amber-700"></div>
+      </section>
+    </div>
+  </div>
+  <script src="/static/track/track.js"></script>
+</body>
+</html>

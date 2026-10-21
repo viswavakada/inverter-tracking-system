@@ -1,0 +1,35 @@
+# Render Blueprint: creates the web app and its PostgreSQL database together.
+# Render dashboard -> New -> Blueprint -> pick this repository.
+# Start on the free plans to try it out; switch both "plan" values for daily use:
+#   web: starter          (the free plan sleeps after 15 idle minutes)
+#   database: basic-256mb (the free database is deleted after 30 days)
+services:
+  - type: web
+    name: delivery-tracking
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # One worker on purpose: the rate limiter and route cache live in memory.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /owner
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        fromDatabase:
+          name: delivery-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OWNER_PASSWORD
+        sync: false # Render asks you for it when you create the Blueprint
+      - key: ROUTING_URL
+        value: https://router.project-osrm.org
+
+databases:
+  - name: delivery-db
+    region: singapore
+    plan: free
+    databaseName: delivery
+    user: delivery

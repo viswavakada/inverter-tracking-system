@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#011346">
+  <link rel="icon" href="/static/staff/icon-192.png">
+  <title>Deliveries · Owner</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <style>
+    .pin { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9999px; color: #fff;
+           font-size: 13px; font-weight: 700; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .pin-ok { background: #1d4ed8; } .pin-delayed { background: #dc2626; } .pin-signal { background: #d97706; }
+    .pin-dest { background: #16a34a; width: 22px; height: 22px; font-size: 11px; }
+    .leaflet-tooltip.staff-label { font-weight: 600; padding: 1px 6px; }
+    /* Fade the logo's edges into the page so its background box does not show. */
+    .logo-fade {
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent),
+                          linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+      -webkit-mask-composite: source-in;
+      mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent),
+                  linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+      mask-composite: intersect;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+
+  <!-- Login -->
+  <div id="loginView" class="hidden fixed inset-0 overflow-y-auto bg-[#011346]">
+    <div class="min-h-full flex flex-col items-center justify-center px-4 py-10">
+      <img src="/static/img/logo.webp" alt="Jayanth Power Systems" width="640" height="511"
+           class="logo-fade w-64 sm:w-80 h-auto mb-6 select-none" draggable="false">
+      <form id="loginForm" class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm space-y-5">
+        <div>
+          <h1 class="text-xl font-bold text-slate-900">Owner login</h1>
+          <p class="text-sm text-slate-500 mt-1">Sign in to manage today's deliveries.</p>
+        </div>
+        <div>
+          <label for="loginPassword" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+          <div class="relative">
+            <input id="loginPassword" type="password" required autocomplete="current-password"
+                   class="w-full border border-slate-300 rounded-xl pl-3 pr-16 py-3 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-600/20">
+            <button type="button" id="togglePassword"
+                    class="absolute inset-y-0 right-0 px-3 text-sm font-medium text-slate-500 hover:text-slate-800">Show</button>
+          </div>
+        </div>
+        <div id="loginError" class="hidden text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2"></div>
+        <button id="loginSubmit" class="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-3 font-semibold transition-colors">Log in</button>
+      </form>
+      <p class="text-xs text-white/50 mt-6">Delivery tracking</p>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="appView" class="hidden">
+    <header class="bg-slate-900 text-white sticky top-0 z-[1100]">
+      <div class="max-w-7xl mx-auto px-3 py-2 flex items-center gap-2">
+        <div class="font-bold mr-auto">Deliveries</div>
+        <nav class="flex gap-1 text-sm">
+          <button data-tab="dashboard" class="tab px-3 py-2 rounded-lg">Dashboard</button>
+          <button data-tab="new" class="tab px-3 py-2 rounded-lg">+ New</button>
+          <button data-tab="staff" class="tab px-3 py-2 rounded-lg">Staff</button>
+        </nav>
+        <button id="logoutBtn" class="text-xs opacity-70 ml-2">Log out</button>
+      </div>
+    </header>
+
+    <!-- Dashboard -->
+    <section id="tab-dashboard" class="tab-panel max-w-7xl mx-auto p-3 space-y-3">
+      <div id="counts" class="grid grid-cols-4 sm:grid-cols-5 gap-2 text-center"></div>
+      <div id="alerts" class="space-y-2"></div>
+      <div class="grid lg:grid-cols-5 gap-3">
+        <div class="lg:col-span-3 bg-white rounded-2xl shadow overflow-hidden">
+          <div id="dashMap" class="h-[45vh] lg:h-[520px] relative z-0"></div>
+        </div>
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow p-3">
+          <h2 class="font-semibold mb-2">Staff</h2>
+          <div id="staffStatus" class="divide-y"></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow">
+        <div class="flex items-center justify-between p-3">
+          <h2 class="font-semibold">Today's deliveries</h2>
+          <div class="text-xs text-slate-500">Updated <span id="updatedAt">-</span></div>
+        </div>
+        <div id="deliveryTable" class="divide-y"></div>
+      </div>
+      <div class="text-xs text-slate-500 flex flex-wrap gap-3 px-1 pb-4">
+        <span><span class="inline-block w-3 h-3 rounded bg-red-200 align-middle"></span> Delayed: on the way over 45 min, or arrived over 60 min</span>
+        <span><span class="inline-block w-3 h-3 rounded bg-amber-200 align-middle"></span> Signal lost: no location for 2+ min while on the way</span>
+        <span><span class="inline-block w-3 h-3 rounded bg-slate-200 align-middle"></span> Idle: no active delivery</span>
+      </div>
+    </section>
+
+    <!-- New delivery -->
+    <section id="tab-new" class="tab-panel hidden max-w-3xl mx-auto p-3">
+      <form id="newForm" class="bg-white rounded-2xl shadow p-4 space-y-3">
+        <h2 class="text-lg font-semibold">New delivery</h2>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="block text-sm">Customer name
+            <input name="customer_name" required maxlength="100" class="mt-1 w-full border rounded-lg px-3 py-2"></label>
+          <label class="block text-sm">Customer phone
+            <input name="customer_phone" required type="tel" placeholder="98765 43210" class="mt-1 w-full border rounded-lg px-3 py-2"></label>
+        </div>
+        <label class="block text-sm">Address
+          <textarea name="address" required rows="2" maxlength="500" class="mt-1 w-full border rounded-lg px-3 py-2"></textarea></label>
+        <label class="block text-sm">Google Maps link or "lat, lng" (optional)
+          <input id="gmapsInput" placeholder="Paste a Google Maps link" class="mt-1 w-full border rounded-lg px-3 py-2"></label>
+        <div id="gmapsMsg" class="text-xs text-slate-500">Or tap the map to set the destination.</div>
+        <div id="pickMap" class="h-72 rounded-xl overflow-hidden border relative z-0"></div>
+        <div class="text-xs text-slate-600">Destination: <span id="destLabel" class="font-mono">not set</span></div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="block text-sm">Item
+            <input name="item_desc" maxlength="500" placeholder="e.g. Exide 150Ah battery" class="mt-1 w-full border rounded-lg px-3 py-2"></label>
+          <label class="block text-sm">Staff
+            <select name="staff_id" id="staffSelect" required class="mt-1 w-full border rounded-lg px-3 py-2 bg-white"></select></label>
+        </div>
+        <div id="newError" class="hidden text-sm text-red-600"></div>
+        <button id="newSubmit" class="w-full bg-blue-700 text-white rounded-lg py-3 font-semibold">Save and assign</button>
+      </form>
+
+      <div id="newDone" class="hidden bg-white rounded-2xl shadow p-4 space-y-3 mt-3">
+        <h2 class="text-lg font-semibold text-green-700">Delivery saved</h2>
+        <div class="text-sm">Assigned to <b id="doneStaff"></b> for <b id="doneCustomer"></b>.</div>
+        <div class="text-sm break-all bg-slate-50 rounded-lg p-2 font-mono" id="doneLink"></div>
+        <div class="grid sm:grid-cols-3 gap-2">
+          <a id="doneWhatsapp" target="_blank" rel="noopener" class="text-center bg-green-600 text-white rounded-lg py-3 font-semibold">Send on WhatsApp</a>
+          <button id="doneCopy" class="bg-slate-200 rounded-lg py-3 font-semibold">Copy link</button>
+          <button id="doneAnother" class="bg-slate-900 text-white rounded-lg py-3 font-semibold">New delivery</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Staff -->
+    <section id="tab-staff" class="tab-panel hidden max-w-3xl mx-auto p-3 space-y-3">
+      <form id="staffForm" class="bg-white rounded-2xl shadow p-4 grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+        <label class="block text-sm">Name<input name="name" required maxlength="100" class="mt-1 w-full border rounded-lg px-3 py-2"></label>
+        <label class="block text-sm">Phone<input name="phone" required type="tel" class="mt-1 w-full border rounded-lg px-3 py-2"></label>
+        <button class="bg-blue-700 text-white rounded-lg px-4 py-2 font-semibold h-[42px]">Add staff</button>
+        <div id="staffError" class="hidden text-sm text-red-600 sm:col-span-3"></div>
+      </form>
+      <div class="bg-white rounded-2xl shadow divide-y" id="staffList"></div>
+      <label class="text-sm flex items-center gap-2 px-1"><input type="checkbox" id="showInactive"> Show deactivated staff</label>
+    </section>
+  </div>
+
+  <div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000] bg-slate-900 text-white text-sm rounded-lg px-4 py-2 shadow"></div>
+
+  <script src="/static/owner/owner.js"></script>
+</body>
+</html>
